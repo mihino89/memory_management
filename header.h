@@ -6,7 +6,7 @@
 #define FOOTER_SIZE sizeof(unsigned int)
 #define FOOTER_HEADER_SIZE (2*sizeof(unsigned int))
 
-void* MEMORY_BEGIN = NULL;
+void* INIT_MEMORY_ADDRESS = NULL;
 
 void *memory_alloc(unsigned int size);
 int memory_free(void *valid_ptr);
