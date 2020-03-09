@@ -16,25 +16,63 @@ void *memory_alloc(unsigned int size){
 
     unsigned int INIT_MEMORY_SIZE = *(unsigned int *)INIT_MEMORY_ADDRESS;
     // printf("init memory adrress: %d, init memory size: %d \n", INIT_MEMORY_ADDRESS, *(unsigned int *)INIT_MEMORY_ADDRESS);
-    int best_match_address, is_last_free_block = 0;
+    int best_match_address = -1, is_last_free_block = 0;
     int *starting_pointer, *current_free_block;
-
-    /** 
-     * Implementation BEST FIT algorithm
-    */
 
     starting_pointer = (unsigned int *) padding(HEADER_SIZE);
     printf("starting pointer address: %d , value: %d \n", starting_pointer, *starting_pointer);
 
    
     /**
+     * Implementation BEST FIT algorithm
      * Kym nie som na poslednom volnom bloku 
     */
     while (!is_last_free_block){
         current_free_block = (unsigned int *) padding(*starting_pointer);
-        printf("current free block: %d , current free block value: %d \n", current_free_block, *current_free_block);
+        printf("current free block: %d, current free block value: %d\n", current_free_block, *current_free_block);
 
-        is_last_free_block = 1;
+
+        /**
+         * current_free_block je presne taky velky ako potrebujem
+        */
+        if(*current_free_block == size + FOOTER_HEADER_SIZE){
+            printf("Great, this is exactly what I needed\n");
+            /**
+             * Vytvor blok pamate 
+            */
+        }
+
+        /**
+         * current_free_block je mensi ako pozadovany  blok
+        */
+        else if(*current_free_block < size + FOOTER_HEADER_SIZE){
+            printf("Current memorry block is too small, sorry, go ahead!\n");
+            /**
+             * Dany blok je prilis maly posun sa na pointer >> skoc na dalsi volny blok pamate
+            */
+        }
+
+        /**
+         * Dany blok je vacsi ako potrebujem
+        */
+        else {
+            if(!*((char *)current_free_block + sizeof(int))){
+                printf("Som na poslednom volnom bloku!\n");
+                /**
+                 * Pozri sa na best_match_address 
+                 * Vytvor hlavicku, data a paticku 1. bloku
+                 * Vytvor hlavicku data a paticku pre zostavajucu pamat po orezani 1.bloku >> 2. blok
+                 * Vrat pointer na 1. blok
+                */
+                is_last_free_block = 1;
+            }
+            else{
+                /**
+                 * ci je blok vacsi + hlavicka + paticka == size
+                 * ak nie vypocitaj rodiel a uloz adressu do best_match_address
+                */
+            } 
+        }       
     }
    
 
