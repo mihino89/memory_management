@@ -8,6 +8,24 @@ void *padding(int size){
 }
 
 
+void *make_memory_block(int padding_address, int size){
+
+    // HEADER 
+    *(int *)padding(padding_address) = size;
+    printf("pocet volnych bytov: %d v pamati %d \n", *(int *)padding(padding_address), (int *)padding(padding_address));
+
+    // FOOTER
+    *(int *)padding(padding_address + size - sizeof(int)) = size;
+    printf("pocet volnych bytov: %d v pamati %d \n", *(int *)padding(padding_address + size - sizeof(int)), (int *)padding(padding_address + size - sizeof(int)));
+
+    return padding(padding_address);
+}
+
+void make_addition_to_free_new_memory_block(int padding_address, int mark){
+    *((int *)padding(padding_address + sizeof(int))) = mark;
+}
+
+
 void *memory_alloc(unsigned int size){
 
     if(!INIT_MEMORY_ADDRESS){
@@ -16,11 +34,11 @@ void *memory_alloc(unsigned int size){
 
     unsigned int INIT_MEMORY_SIZE = *(unsigned int *)INIT_MEMORY_ADDRESS;
     // printf("init memory adrress: %d, init memory size: %d \n", INIT_MEMORY_ADDRESS, *(unsigned int *)INIT_MEMORY_ADDRESS);
-    int best_match_address = -1, is_last_free_block = 0;
+    int best_match_address = -1, is_last_free_block = 0, block_size_1, block_size_2;
     int *starting_pointer, *current_free_block;
 
     starting_pointer = (unsigned int *) padding(HEADER_SIZE);
-    printf("starting pointer address: %d , value: %d \n", starting_pointer, *starting_pointer);
+    // printf("starting pointer address: %d , value: %d \n", starting_pointer, *starting_pointer);
 
    
     /**
@@ -29,7 +47,7 @@ void *memory_alloc(unsigned int size){
     */
     while (!is_last_free_block){
         current_free_block = (unsigned int *) padding(*starting_pointer);
-        printf("current free block: %d, current free block value: %d\n", current_free_block, *current_free_block);
+        // printf("current free block: %d, current free block value: %d\n", current_free_block, *current_free_block);
 
 
         /**
@@ -43,7 +61,7 @@ void *memory_alloc(unsigned int size){
         }
 
         /**
-         * current_free_block je mensi ako pozadovany  blok
+         * current_free_block je mensi ako pozadovany blok
         */
         else if(*current_free_block < size + FOOTER_HEADER_SIZE){
             printf("Current memorry block is too small, sorry, go ahead!\n");
@@ -56,20 +74,44 @@ void *memory_alloc(unsigned int size){
          * Dany blok je vacsi ako potrebujem
         */
         else {
+            /**
+             * Ak som na poslednom moznom bloku
+            */
             if(!*((char *)current_free_block + sizeof(int))){
-                printf("Som na poslednom volnom bloku!\n");
+                printf("I am on the last memorry block, please decide!\n");
+
+                if(best_match_address == -1 || best_match_address > (*current_free_block - FOOTER_HEADER_SIZE)){
+                    block_size_1 = size + FOOTER_HEADER_SIZE;
+                    block_size_2 = *current_free_block - size - FOOTER_HEADER_SIZE;
+
+                    printf("size of block 1: %d and size of block 2: %d \n", block_size_1, block_size_2);
+
+                    char *help_address_1 = (char *)make_memory_block(*starting_pointer, block_size_1);
+                    printf("returned value_1: %d\n", help_address_1 + sizeof(int));
+
+                    char *help_address_2 = (char *)make_memory_block(*starting_pointer + block_size_1, block_size_2);
+
+                    *starting_pointer = help_address_2 - (char *)INIT_MEMORY_ADDRESS;
+
+                    printf("starting pointer: %d\n", *starting_pointer);
+
+                    // printf("starting pointer: %d\n", INIT_MEMORY_ADDRESS - help_address_2);
+                }
                 /**
                  * Pozri sa na best_match_address 
                  * Vytvor hlavicku, data a paticku 1. bloku
                  * Vytvor hlavicku data a paticku pre zostavajucu pamat po orezani 1.bloku >> 2. blok
                  * Vrat pointer na 1. blok
+                 * Ak je to pociatocny pointer tak zmen pociatocny padding 
                 */
                 is_last_free_block = 1;
             }
+            /**
+             * este nie som na poslednom moznom bloku
+            */
             else{
                 /**
-                 * ci je blok vacsi + hlavicka + paticka == size
-                 * ak nie vypocitaj rodiel a uloz adressu do best_match_address
+                 * vypocitaj rodiel a uloz adressu do best_match_address
                 */
             } 
         }       
