@@ -15,7 +15,7 @@ void *make_memory_block(int padding_address, int size){
     printf("pocet volnych bytov: %d v pamati %d \n", *(int *)padding(padding_address), (int *)padding(padding_address));
 
     // FOOTER
-    *(int *)padding(padding_address + size - sizeof(int)) = size;
+    *(int *)padding(padding_address + size - HEADER_SIZE) = size;
     printf("pocet volnych bytov: %d v pamati %d \n", *(int *)padding(padding_address + size - sizeof(int)), (int *)padding(padding_address + size - sizeof(int)));
 
     return padding(padding_address);
@@ -54,10 +54,13 @@ void *memory_alloc(unsigned int size){
          * current_free_block je presne taky velky ako potrebujem
         */
         if(*current_free_block == size + FOOTER_HEADER_SIZE){
-            printf("Great, this is exactly what I needed\n");
-            /**
-             * Vytvor blok pamate 
-            */
+            block_size_1 = size + FOOTER_HEADER_SIZE;
+            printf("Great, this is exactly what I needed, starting pointer is: %d, block size: %d\n", *starting_pointer, block_size_1);
+
+            void *help_address_1 = (char *)make_memory_block(*starting_pointer, block_size_1);
+            // printf("address of block is: %d and value there is: %d checking footer: %d AND ADDRESS: %d", (char *)help_address_1, *(int *)help_address_1, *(int *)padding(block_size_1 + *starting_pointer - HEADER_SIZE), (char *)padding(size+ *starting_pointer - HEADER_SIZE));
+
+            return (char *)help_address_1 + sizeof(int);
         }
 
         /**
@@ -116,16 +119,21 @@ void *memory_alloc(unsigned int size){
              * este nie som na poslednom moznom bloku
             */
             else{
-                printf("hahaha\n");
+                printf("I am not on the last block!\n");
                 /**
                  * vypocitaj rodiel a uloz adressu do best_match_address
                 */
             } 
+            is_last_free_block = 1;
         }
-        is_last_free_block = 1;
     }
-   
+}
 
+
+int memory_free(void *valid_ptr){
+    printf("this address want delete: %d and value there: %d \n", (char *)valid_ptr, *(char *)valid_ptr);
+
+    return 0;
 }
 
 
@@ -172,5 +180,8 @@ int main(){
     printf("pointer 2: %d\n", pointer2);
 
     char* pointer3 = (char *) memory_alloc(130);
-    // printf("pointer 2: %d\n", pointer3);
+    printf("pointer 3: %d\n", pointer3);
+
+    if (pointer2)
+        memory_free(pointer2);
 }
