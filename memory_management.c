@@ -8,21 +8,27 @@ void *padding(int size){
 }
 
 
-void *make_memory_block(int padding_address, int size){
+void *make_memory_block(int padding_address, int size, int is_free){
 
-    // HEADER 
-    *(int *)padding(padding_address) = size;
-    printf("pocet volnych bytov: %d v pamati %d \n", *(int *)padding(padding_address), (int *)padding(padding_address));
+    if(is_free){
+        // HEADER 
+        *(int *)padding(padding_address) = size;
 
-    // FOOTER
-    *(int *)padding(padding_address + size - HEADER_SIZE) = size;
-    printf("pocet volnych bytov: %d v pamati %d \n", *(int *)padding(padding_address + size - sizeof(int)), (int *)padding(padding_address + size - sizeof(int)));
+        // FOOTER
+        *(int *)padding(padding_address + size - HEADER_SIZE) = size;
+    } else {
+        // HEADER 
+        *(int *)padding(padding_address) = -size;
+
+        // FOOTER
+        *(int *)padding(padding_address + size - HEADER_SIZE) = -size;
+    }
+
+
+    printf("header new block: %d pamat %d is free: %d\n", *(int *)padding(padding_address), (int *)padding(padding_address), is_free);
+    printf("footer new block: %d pamat %d is free: %d\n", *(int *)padding(padding_address + size - sizeof(int)), (int *)padding(padding_address + size - sizeof(int)), is_free);
 
     return padding(padding_address);
-}
-
-void make_addition_to_free_new_memory_block(int padding_address, int mark){
-    *((char *)padding(padding_address + sizeof(int))) = mark;
 }
 
 
@@ -57,7 +63,7 @@ void *memory_alloc(unsigned int size){
             block_size_1 = size + FOOTER_HEADER_SIZE;
             printf("Great, this is exactly what I needed, starting pointer is: %d, block size: %d\n", *starting_pointer, block_size_1);
 
-            void *help_address_1 = (char *)make_memory_block(*starting_pointer, block_size_1);
+            void *help_address_1 = (char *)make_memory_block(*starting_pointer, block_size_1, 0);
             // printf("address of block is: %d and value there is: %d checking footer: %d AND ADDRESS: %d", (char *)help_address_1, *(int *)help_address_1, *(int *)padding(block_size_1 + *starting_pointer - HEADER_SIZE), (char *)padding(size+ *starting_pointer - HEADER_SIZE));
 
             return (char *)help_address_1 + sizeof(int);
@@ -85,34 +91,33 @@ void *memory_alloc(unsigned int size){
 
                 /**
                  * je prvy aj posledny zaroven vyhovujuci volny blok alebo dany blok pamata je najvhodnejsi
-                */
-                if(best_match_address == -1 || best_match_address > (*current_free_block - FOOTER_HEADER_SIZE)){
-                    block_size_1 = size + FOOTER_HEADER_SIZE;
-                    block_size_2 = *current_free_block - size - FOOTER_HEADER_SIZE;
-
-                    printf("size of block 1: %d and size of block 2: %d \n", block_size_1, block_size_2);
-
-                    void *help_address_1 = (char *)make_memory_block(*starting_pointer, block_size_1);
-                    printf("returned value_1: %d\n", (char *)help_address_1 + sizeof(int));
-
-                    char *help_address_2 = (char *)make_memory_block(*starting_pointer + block_size_1, block_size_2);
-
-                    *starting_pointer = help_address_2 - (char *)INIT_MEMORY_ADDRESS;
-
-                    printf("starting pointer: %d %d\n",*starting_pointer, *starting_pointer + sizeof(int));
-                    *(unsigned int *)padding(*starting_pointer + sizeof(int)) = 0;
-                    printf("starting pointer: %d %d\n",*(unsigned int *)padding(*starting_pointer + sizeof(int)), (unsigned int *)padding(*starting_pointer + sizeof(int)));
-                    // make_addition_to_free_new_memory_block(*starting_pointer + sizeof(int), 0);
-
-                    return (char *)help_address_1 + sizeof(int);
-                }
-                /**
+                 * 
                  * Pozri sa na best_match_address 
                  * Vytvor hlavicku, data a paticku 1. bloku
                  * Vytvor hlavicku data a paticku pre zostavajucu pamat po orezani 1.bloku >> 2. blok a za hlavicku volneho bloku daj 0 ak je posledny
                  * Vrat pointer na 1. blok
                  * Ak je to pociatocny pointer tak zmen pociatocny padding 
                 */
+
+                if(best_match_address == -1 || best_match_address > (*current_free_block - FOOTER_HEADER_SIZE)){
+                    block_size_1 = size + FOOTER_HEADER_SIZE;
+                    block_size_2 = *current_free_block - size - FOOTER_HEADER_SIZE;
+
+                    printf("size of block 1: %d and size of block 2: %d \n", block_size_1, block_size_2);
+
+                    void *help_address_1 = (char *)make_memory_block(*starting_pointer, block_size_1, 0);
+                    printf("returned value_1: %d\n", (char *)help_address_1 + sizeof(int));
+
+                    char *help_address_2 = (char *)make_memory_block(*starting_pointer + block_size_1, block_size_2, 1);
+
+                    *starting_pointer = help_address_2 - (char *)INIT_MEMORY_ADDRESS;
+
+                    printf("starting pointer: %d %d\n",*starting_pointer, *starting_pointer + sizeof(int));
+                    *(unsigned int *)padding(*starting_pointer + sizeof(int)) = 0;
+                    printf("starting pointer: %d %d\n",*(unsigned int *)padding(*starting_pointer + sizeof(int)), (unsigned int *)padding(*starting_pointer + sizeof(int)));
+
+                    return (char *)help_address_1 + sizeof(int);
+                }
                 is_last_free_block = 1;
             }
             /**
@@ -130,8 +135,49 @@ void *memory_alloc(unsigned int size){
 }
 
 
+int memory_free_before_block(int padding_address){
+    int *before_memory_block = (unsigned int*)padding(padding_address - FOOTER_SIZE);
+    
+    printf("footer_previous address: %d footer_previous value: %d\n", before_memory_block, *before_memory_block);
+
+    if(*before_memory_block > 0){
+        return abs(*before_memory_block);
+    }
+
+    return 0;
+}
+
+
+int memory_free_behind_block(int padding_address){
+    int *before_memory_block = (unsigned int*)padding(padding_address + FOOTER_SIZE);
+    
+    printf("header_next address: %d header_nect value: %d\n", before_memory_block, *before_memory_block);
+
+    if(*before_memory_block > 0){
+        return abs(*before_memory_block);
+    }
+    
+    return 0;
+}
+
+
 int memory_free(void *valid_ptr){
-    printf("this address want delete: %d and value there: %d \n", (char *)valid_ptr, *(char *)valid_ptr);
+    int helper_left, helper_right;
+    void *block_to_free_header_address = (char *)valid_ptr - HEADER_SIZE;
+    int padding_left = block_to_free_header_address - INIT_MEMORY_ADDRESS;
+    int padding_right = (block_to_free_header_address + abs(*(int *)block_to_free_header_address) - FOOTER_SIZE) - INIT_MEMORY_ADDRESS;
+
+    helper_left = memory_free_before_block(padding_left);
+    helper_right = memory_free_behind_block(padding_right);
+    printf("this address want delete: %d and value there: %d, padding_left is: %d padding_right is: %d helper_left is: %d helper_right is: %d\n", block_to_free_header_address, *(int *)block_to_free_header_address, padding_left, padding_right, helper_left, helper_right);
+
+    if(helper_left > 0){
+        /**
+         * urob fragmentaciu s predchadzajucim blokom 
+         * helper + abs(*(int *)block_to_free_header_address)
+        */
+    }
+
 
     return 0;
 }
