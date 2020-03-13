@@ -1,6 +1,7 @@
 #include "header.h"
 #include <stdio.h> 
 #include <stdlib.h> 
+#include <string.h>
 
 
 void *padding(int size){
@@ -24,8 +25,8 @@ void *make_memory_block(int padding_left_address, int size, int is_free){
         *(int *)padding(padding_left_address + size - HEADER_SIZE) = -size;
     }
 
-    printf("header new block: %d pamat %d is free: %d\n", *(int *)padding(padding_left_address), (int *)padding(padding_left_address), is_free);
-    printf("footer new block: %d pamat %d is free: %d\n", *(int *)padding(padding_left_address + size - sizeof(int)), (int *)padding(padding_left_address + size - sizeof(int)), is_free);
+    // printf("header new block: %d pamat %d is free: %d\n", *(int *)padding(padding_left_address), (int *)padding(padding_left_address), is_free);
+    // printf("footer new block: %d pamat %d is free: %d\n", *(int *)padding(padding_left_address + size - sizeof(int)), (int *)padding(padding_left_address + size - sizeof(int)), is_free);
 
     return padding(padding_left_address);
 }
@@ -44,7 +45,7 @@ int find_previous_free_memory_block(int padding_left_address){
 
 int find_next_free_memory_block(int padding_address){
     int padding_value = *(int *)padding(padding_address);
-    printf("padding value is: %d padding address: %d next hop: %d\n", padding_value, padding_address, *(int *)padding(padding_address + padding_value));
+    // printf("padding value is: %d padding address: %d next hop: %d\n", padding_value, padding_address, *(int *)padding(padding_address + padding_value));
 
     if(padding_value + padding_address >= *(int *)INIT_MEMORY_ADDRESS){
         printf("som posledny!\n");
@@ -58,7 +59,10 @@ int find_next_free_memory_block(int padding_address){
     }
 
     padding_address += abs(padding_value);
-    printf("return padding address: %d\n", padding_address);
+    if(padding_address == *(int *)INIT_MEMORY_ADDRESS)
+        return 0;
+
+    // printf("return padding address: %d\n", padding_address);
     return padding_address;
 }
 
@@ -241,7 +245,7 @@ int check_previous_memory_block(int padding_left_address){
     }
 
     else if(*before_memory_block > 0){
-        printf("footer_previous address: %d footer_previous value: %d\n", before_memory_block, *before_memory_block);
+        // printf("footer_previous address: %d footer_previous value: %d\n", before_memory_block, *before_memory_block);
         return abs(*before_memory_block);
     }
 
@@ -250,7 +254,7 @@ int check_previous_memory_block(int padding_left_address){
 
 
 int check_next_memory_block(int padding_address){
-    int padding_value = *(int *)padding(padding_address);
+    int padding_value = abs(*(int *)padding(padding_address));
     int *next_memory_block = (unsigned int*)padding(padding_address + FOOTER_SIZE);
 
     if(padding_address + padding_value >= *(int *)INIT_MEMORY_ADDRESS){
@@ -259,7 +263,7 @@ int check_next_memory_block(int padding_address){
     }
     else if(*next_memory_block > 0){
         return abs(*next_memory_block);
-        printf("header_next address: %d header_nect value: %d\n", next_memory_block, *next_memory_block);
+        // printf("header_next address: %d header_nect value: %d\n", next_memory_block, *next_memory_block);
     }
 
     return 0;
@@ -267,32 +271,32 @@ int check_next_memory_block(int padding_address){
 
 
 int memory_free(void *valid_ptr){
-    int helper_left, helper_right, padding_left, padding_right, padding_after_fragmentation, find_the_nearest_left, find_the_nearest_right;
+    int size_of_left_free_memory_block, size_of_right_free_memory_block, padding_left, padding_right, padding_after_fragmentation, find_the_nearest_left, find_the_nearest_right;
     void *help_address_1, *block_to_free_header_address = (char *)valid_ptr - HEADER_SIZE;
     *(int *)block_to_free_header_address = abs(*(int *)block_to_free_header_address);
 
     padding_left = block_to_free_header_address - INIT_MEMORY_ADDRESS;
     padding_right = (block_to_free_header_address + *(int *)block_to_free_header_address - FOOTER_SIZE) - INIT_MEMORY_ADDRESS;
 
-    helper_left = check_previous_memory_block(padding_left);
-    helper_right = check_next_memory_block(padding_right);
+    size_of_left_free_memory_block = check_previous_memory_block(padding_left);
+    size_of_right_free_memory_block = check_next_memory_block(padding_right);
     
-    printf("this address want delete: %d and value there: %d, padding_left is: %d padding_right is: %d helper_left is: %d AND! %d helper_right is: %d\n", block_to_free_header_address - INIT_MEMORY_ADDRESS + *(int *)block_to_free_header_address - FOOTER_SIZE, *(int *)block_to_free_header_address, padding_left, padding_right, helper_left, *(int *)padding(padding_left - helper_left), helper_right);
+    printf("value there to delete: %d, padding_left is: %d padding_right is: %d size_of_left_free_memory_block is: %d AND! %d size_of_right_free_memory_block is: %d\n", *(int *)block_to_free_header_address, padding_left, padding_right, size_of_left_free_memory_block, *(int *)padding(padding_left - size_of_left_free_memory_block), size_of_right_free_memory_block);
 
     // ======= BLOKY =======
-    if(helper_left && helper_right){
+    if(size_of_left_free_memory_block && size_of_right_free_memory_block){
         printf("vedla mna na pravo aj na lavo sa nachadza volny blok, spoj sa s nim!\n");
-        help_address_1 = (char *)make_memory_block(padding_left - helper_left, *(int *)block_to_free_header_address + helper_left + helper_right, 1);
+        help_address_1 = (char *)make_memory_block(padding_left - size_of_left_free_memory_block, *(int *)block_to_free_header_address + size_of_left_free_memory_block + size_of_right_free_memory_block, 1);
     }
 
-    else if(helper_left && !helper_right){
-        printf("vedla mna na lavo sa nachadza volny blok, spoj sa s nim!\n");
-        help_address_1 = (char *)make_memory_block(padding_left - helper_left, *(int *)block_to_free_header_address + helper_left, 1);
+    else if(size_of_left_free_memory_block && !size_of_right_free_memory_block){
+        printf("vedla mna na lavo sa nachadza volny blok, spoj sa s nim! %d\n", padding_left - size_of_left_free_memory_block);
+        help_address_1 = (char *)make_memory_block(padding_left - size_of_left_free_memory_block, *(int *)block_to_free_header_address + size_of_left_free_memory_block, 1);
     }
 
-    else if(!helper_left && helper_right){
+    else if(!size_of_left_free_memory_block && size_of_right_free_memory_block){
         printf("vedla mna na pravo sa nachadza volny blok, spoj sa s nim!\n");
-        help_address_1 = (char *)make_memory_block(padding_left, *(int *)block_to_free_header_address + helper_right, 1);
+        help_address_1 = (char *)make_memory_block(padding_left, *(int *)block_to_free_header_address + size_of_right_free_memory_block, 1);
     }
 
     else {
@@ -317,7 +321,7 @@ int memory_free(void *valid_ptr){
     else 
         *(int *)padding(padding_after_fragmentation + HEADER_SIZE) = 0;
 
-    printf("padding_after_fragmentation value: %d, nearest right pointer: %d\n", *(int *)padding(padding_after_fragmentation), *(int *)padding(padding_after_fragmentation + HEADER_SIZE));
+    printf("super pointer block: %d, nearest right pointer: %d\n", *(int *)padding(find_the_nearest_left + HEADER_SIZE), *(int *)padding(padding_after_fragmentation + HEADER_SIZE));
     return 0;
 }
 
@@ -353,7 +357,7 @@ void memory_init(void *ptr, unsigned int size){
 }
 
 
-int main(){
+void small_test(){
     char arr[200];
 
     memory_init(arr, 200);
@@ -364,9 +368,23 @@ int main(){
     char* pointer2 = (char *) memory_alloc(30);
     printf("pointer 2: %d\n", pointer2);
 
-    // char* pointer3 = (char *) memory_alloc(130);
-    // printf("pointer 3: %d\n", pointer3);
+    char* pointer3 = (char *) memory_alloc(130);
+    printf("pointer 3: %d\n", pointer3);
 
-    if (pointer)
+    if (pointer){
         memory_free(pointer);
+    }
+
+    if (pointer2){
+        memory_free(pointer2);
+    }
+
+    if (pointer3){
+        memory_free(pointer3);
+    }
+}
+
+
+int main(){
+    small_test();
 }
