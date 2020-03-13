@@ -39,13 +39,14 @@ int find_previous_free_memory_block(int padding_left_address){
         padding_left_address -= abs(*(int*)padding(padding_left_address));
     }
     
+    printf("haha\n");
     return padding_left_address;
 }
 
 
 int find_next_free_memory_block(int padding_address){
     int padding_value = *(int *)padding(padding_address);
-    // printf("padding value is: %d padding address: %d next hop: %d\n", padding_value, padding_address, *(int *)padding(padding_address + padding_value));
+    printf("padding value is: %d padding address: %d next hop: %d\n", padding_value, padding_address, *(int *)padding(padding_address + padding_value));
 
     if(padding_value + padding_address >= *(int *)INIT_MEMORY_ADDRESS){
         printf("som posledny!\n");
@@ -53,16 +54,15 @@ int find_next_free_memory_block(int padding_address){
     }
 
     // not tested (not implemented)
-    while (*(int *)padding(padding_address + padding_value) < 0){
+    while (*(unsigned int *)padding(padding_address + padding_value) < 0){
         padding_address += abs(padding_value);
         padding_value = abs(*(int *)padding(padding_address));
     }
 
     padding_address += abs(padding_value);
-    if(padding_address == *(int *)INIT_MEMORY_ADDRESS)
-        return 0;
-
     // printf("return padding address: %d\n", padding_address);
+    if(padding_address >= *(int *)INIT_MEMORY_ADDRESS)
+        return 0;
     return padding_address;
 }
 
@@ -281,7 +281,7 @@ int memory_free(void *valid_ptr){
     size_of_left_free_memory_block = check_previous_memory_block(padding_left);
     size_of_right_free_memory_block = check_next_memory_block(padding_right);
     
-    printf("value there to delete: %d, padding_left is: %d padding_right is: %d size_of_left_free_memory_block is: %d AND! %d size_of_right_free_memory_block is: %d\n", *(int *)block_to_free_header_address, padding_left, padding_right, size_of_left_free_memory_block, *(int *)padding(padding_left - size_of_left_free_memory_block), size_of_right_free_memory_block);
+    printf("value there to delete: %d, padding_left is: %d padding_right is: %d size_of_left_free_memory_block is: %d size_of_right_free_memory_block is: %d\n", *(int *)block_to_free_header_address, padding_left, padding_right, size_of_left_free_memory_block, size_of_right_free_memory_block);
 
     // ======= BLOKY =======
     if(size_of_left_free_memory_block && size_of_right_free_memory_block){
@@ -299,7 +299,7 @@ int memory_free(void *valid_ptr){
         help_address_1 = (char *)make_memory_block(padding_left, *(int *)block_to_free_header_address + size_of_right_free_memory_block, 1);
     }
 
-    else {
+    else{
         help_address_1 = make_memory_block(padding_left, *(int *)block_to_free_header_address, 1);
         printf("vedla mna nieje volny blok!! %d %d\n", (int *)help_address_1, (int *)block_to_free_header_address);
     }
@@ -373,10 +373,6 @@ void small_test(){
 
     if (pointer){
         memory_free(pointer);
-    }
-
-    if (pointer2){
-        memory_free(pointer2);
     }
 
     if (pointer3){
