@@ -52,8 +52,8 @@ int find_previous_free_memory_block(int padding_left_address){
 
 
 int find_next_free_memory_block(int padding_address){
-    // printf("haha %d\n", *(int *)padding(padding_address));
     int padding_value = *(int *)padding(padding_address);
+    // printf("padding_value %d\n",padding_value);
 
     if(padding_value + padding_address >= *(int *)INIT_MEMORY_ADDRESS){
         // printf("som posledny!\n");
@@ -169,10 +169,13 @@ void *memory_alloc(unsigned int size){
                     best_match_padding = (char *)current_free_block - (char *)INIT_MEMORY_ADDRESS;
                     // printf("current free block: %d %d, current free block value HAHAH: %d\n", best_match_address, (int *)INIT_MEMORY_ADDRESS, best_match_value);
                 } 
-                // printf("best_match_value: %d address: %d\n", best_match_value, best_match_address);
+                int the_nearest_address_left = find_previous_free_memory_block(best_match_padding);
+                int the_nereast_address_right = find_next_free_memory_block(best_match_padding);
+                // printf("this %d\n", the_nereast_address_right);
+                // printf("best_match_value: %d address: %d\n", best_match_padding, best_match_address);
 
                 block_size_1 = size + FOOTER_HEADER_SIZE;
-                block_size_2 = best_match_value - size;
+                block_size_2 = best_match_value - size + FOOTER_HEADER_SIZE;
                 // printf("size of block 1: %d and size of block 2: %d \n", block_size_1, block_size_2);
                 
                 int padding_addres_block_1 = (char *)best_match_address - (char *)INIT_MEMORY_ADDRESS;
@@ -181,17 +184,15 @@ void *memory_alloc(unsigned int size){
                 void *help_address_1 = (char *)make_memory_block(padding_addres_block_1, block_size_1, 0);
                 void *help_address_2 = (char *)make_memory_block(padding_addres_block_1 + block_size_1, block_size_2, 1);
                 
-                int the_nearest_address_left = find_previous_free_memory_block(best_match_padding);
-                int the_nereast_address_right = find_next_free_memory_block(best_match_padding);
                 // ======= POINTRE =======
                 /**
                  * Som prvy a nie posledny - povedz super_pointru adresu na nasledujuci
                 */
                 if(the_nearest_address_left <= 4 && the_nereast_address_right){
                     *super_pointer = (char *)help_address_2 - (char *)INIT_MEMORY_ADDRESS;
-                    int the_nereast_address_right = find_next_free_memory_block((char *)help_address_2 - (char *)INIT_MEMORY_ADDRESS);
                     // nastav bloku 2. pointer na dalsi blok
                     *(int *)padding(*super_pointer + HEADER_SIZE) = the_nereast_address_right;
+                    // printf("super pointer: %d\n", the_nereast_address_right);
                 }
 
                 /**
@@ -206,9 +207,7 @@ void *memory_alloc(unsigned int size){
                  * Som posledny a nie prvy - pozri sa na predchadzajuci a posun pointer na blok 2, blok dva_header + HEADER = 0;
                 */
                 else if(the_nearest_address_left > 4 && !the_nereast_address_right){
-                    *(unsigned int *)padding(help_address_2 - INIT_MEMORY_ADDRESS + HEADER_SIZE) = 0;
-                    int the_nearest_address_left = find_previous_free_memory_block(help_address_2 - INIT_MEMORY_ADDRESS);
-                    
+                    *(unsigned int *)padding(help_address_2 - INIT_MEMORY_ADDRESS + HEADER_SIZE) = 0;                  
                     *(int *)(padding(the_nearest_address_left + HEADER_SIZE)) = help_address_2 - INIT_MEMORY_ADDRESS;
                 }
 
@@ -216,9 +215,6 @@ void *memory_alloc(unsigned int size){
                  * Som v strede - povedz predchadzajucemu nech ukazuje na nasledujuceho 
                 */
                 else if(the_nearest_address_left > 4 && the_nereast_address_right){
-                    int the_nearest_address_left = find_previous_free_memory_block(help_address_2 - INIT_MEMORY_ADDRESS);
-                    int the_nereast_address_right = find_next_free_memory_block(help_address_2 - INIT_MEMORY_ADDRESS);
-
                     *(int *)(padding(the_nearest_address_left + HEADER_SIZE)) = help_address_2 - INIT_MEMORY_ADDRESS;
                     *(int *)padding(help_address_2 - INIT_MEMORY_ADDRESS + HEADER_SIZE) = the_nereast_address_right;
                 }
@@ -376,8 +372,7 @@ void memory_init(void *ptr, unsigned int size){
 
 
 void print_memory_blocks_in_region(char region[]){
-    long diff = (int *)region - (int *)INIT_MEMORY_ADDRESS;
-    int akt_address = diff + FOOTER_HEADER_SIZE;
+    int akt_address = FOOTER_HEADER_SIZE;
 
     printf("\nregion super pointer: %d ", abs(*(unsigned int *)padding(akt_address - HEADER_SIZE)));
 
@@ -385,6 +380,7 @@ void print_memory_blocks_in_region(char region[]){
         printf("| %d xx%dxx %d ", *(int *)padding(akt_address), akt_address, *(int *)padding(akt_address));
         akt_address = akt_address + abs(*(int *)padding(akt_address));
     }
+    // printf("? %d xx%dxx %d ", *(int *)padding(akt_address), akt_address, *(int *)padding(akt_address));
     printf("\n\n");
 }
 
