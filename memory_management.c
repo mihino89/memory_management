@@ -65,7 +65,7 @@ int find_next_free_memory_block(int padding_address){
         padding_address += abs(padding_value);
         padding_value = abs(*(int *)padding(padding_address));
         if(padding_value + padding_address >= *(int *)INIT_MEMORY_ADDRESS){
-            printf("som posledny!\n");
+            // printf("som posledny!\n");
             return 0;
         }
     }
@@ -485,6 +485,12 @@ void medium_test(){
     printf("super pointer6: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer6 - INIT_MEMORY_ADDRESS));
     print_memory_blocks_in_region(arr);
 
+    pointer4 = (char *) memory_alloc(random_region_number - FOOTER_HEADER_SIZE);
+    padding_left = (void *)pointer4 - INIT_MEMORY_ADDRESS - 4;
+    padding_left_value = *(int *)padding(padding_left);
+    printf("super pointer4: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer4 - INIT_MEMORY_ADDRESS));
+    print_memory_blocks_in_region(arr);
+
     if (pointer3){
         memory_free(pointer3);
     }
@@ -492,6 +498,16 @@ void medium_test(){
 
     if (pointer2){
         memory_free(pointer2);
+    }
+    print_memory_blocks_in_region(arr);
+
+    if (pointer6){
+        memory_free(pointer6);
+    }
+    print_memory_blocks_in_region(arr);
+
+    if (pointer4){
+        memory_free(pointer4);
     }
     print_memory_blocks_in_region(arr);
 }
