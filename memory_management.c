@@ -104,15 +104,14 @@ void *memory_alloc(unsigned int size){
         */
         if(*current_free_block == size + FOOTER_HEADER_SIZE){
             // ======= BLOKY =======
+            int the_nearest_address_left = find_previous_free_memory_block(current_free_block_padding);
+            int the_nereast_address_right = find_next_free_memory_block(current_free_block_padding);
+            // printf("the_nereast_address_right: %d\n",the_nereast_address_right);
 
             block_size_1 = size + FOOTER_HEADER_SIZE;
-            // printf("Great, this is exactly what I needed, starting pointer is: %d, block size: %d\n", *akt_pointer, block_size_1);
             
             void *help_address_1 = (char *)make_memory_block(current_free_block_padding, block_size_1, 0);
             // printf("address of block is: %d and value there is: %d checking footer: %d AND ADDRESS: %d\n", (char *)help_address_1, *(int *)help_address_1, *(int *)padding(block_size_1 + *akt_pointer - HEADER_SIZE), (char *)padding(size+ *akt_pointer - HEADER_SIZE));
-            
-            int the_nearest_address_left = find_previous_free_memory_block(current_free_block_padding);
-            int the_nereast_address_right = find_next_free_memory_block(current_free_block_padding);
 
             // ======= POINTRE =======
             /**
@@ -120,7 +119,7 @@ void *memory_alloc(unsigned int size){
             */
             if(the_nearest_address_left <= 4 && the_nereast_address_right){
                 // printf("Som prvy - povedz super_pointru ze nasledujuci je prvy, superpointer before: %d\n", *super_pointer);
-                *super_pointer = find_next_free_memory_block(current_free_block_padding);
+                *super_pointer = the_nereast_address_right;
             }
 
             /**
@@ -134,11 +133,9 @@ void *memory_alloc(unsigned int size){
             /**
              * som prvy aj posledny - nastav super pointer na 0
             */
-            if(the_nearest_address_left <= 4 && !the_nereast_address_right){
-                // printf("Som prvy aj posledny pointer!\n");
+            if(the_nearest_address_left <= 4 && !the_nereast_address_right)
                 *super_pointer = 0;
-            }
-
+            
             /**
              * Som v strede - povedz predchadzajucemu nech ukazuje na nasledujuceho 
             */
@@ -381,7 +378,7 @@ void print_memory_blocks_in_region(char region[]){
         akt_address = akt_address + abs(*(int *)padding(akt_address));
     }
     // printf("? %d xx%dxx %d ", *(int *)padding(akt_address), akt_address, *(int *)padding(akt_address));
-    printf("\n\n");
+    printf("\n");
 }
 
 
@@ -432,7 +429,7 @@ void small_test(){
 void medium_test(){
     int blok_1, blok_2, blok_3, blok_4, random_region_number = generate_numbers_for_testing(24, 50000);
     char arr[random_region_number];
-    char *pointer1, *pointer2, *pointer3, *pointer4;
+    char *pointer1, *pointer2, *pointer3, *pointer4, *pointer5, *pointer6;
 
     memory_init(arr, random_region_number);
     
@@ -464,6 +461,28 @@ void medium_test(){
     padding_left = (void *)pointer4 - INIT_MEMORY_ADDRESS - 4;
     padding_left_value = *(int *)padding(padding_left);
     printf("super pointer4: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer4 - INIT_MEMORY_ADDRESS));
+    print_memory_blocks_in_region(arr);
+
+    pointer5 = (char*) memory_alloc(8);
+    padding_left = (void *)pointer5 - INIT_MEMORY_ADDRESS - 4;
+    padding_left_value = *(int *)padding(padding_left);
+    printf("super pointer5: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer5 - INIT_MEMORY_ADDRESS));
+    print_memory_blocks_in_region(arr);
+
+    if (pointer4){
+        memory_free(pointer4);
+    }
+    print_memory_blocks_in_region(arr);
+
+    if (pointer5){
+        memory_free(pointer5);
+    }
+    print_memory_blocks_in_region(arr);
+
+    pointer6 = (char*) memory_alloc(blok_1);
+    padding_left = (void *)pointer6 - INIT_MEMORY_ADDRESS - 4;
+    padding_left_value = *(int *)padding(padding_left);
+    printf("super pointer6: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer6 - INIT_MEMORY_ADDRESS));
     print_memory_blocks_in_region(arr);
 
     if (pointer3){
