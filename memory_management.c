@@ -85,10 +85,9 @@ void *memory_alloc(unsigned int size){
     }
 
     unsigned int INIT_MEMORY_SIZE = *(unsigned int *)INIT_MEMORY_ADDRESS;
-    int best_match_value = -1, *best_match_address, best_match_padding, is_last_free_block = 0, block_size_1, block_size_2, counter = 0;
-    int *akt_pointer, *super_pointer, *current_free_block, current_free_block_padding;
+    int best_match_value = -1, *best_match_address, best_match_padding, is_last_free_block = 0, block_size_1, block_size_2;
+    int *super_pointer, *current_free_block, current_free_block_padding;
 
-    akt_pointer = (int *) padding(HEADER_SIZE);
     super_pointer = (unsigned int *) padding(HEADER_SIZE);
 
     if(*super_pointer == 0){
@@ -96,12 +95,10 @@ void *memory_alloc(unsigned int size){
         return 0;
     }
 
-    current_free_block = (unsigned int *) padding(*akt_pointer);
-    current_free_block_padding = *akt_pointer;
+    current_free_block = (unsigned int *) padding(*super_pointer);
+    current_free_block_padding = *super_pointer;
 
     while (!is_last_free_block){
-        counter++;
-
         /**
          * current_free_block je presne taky velky ako potrebujem
         */
@@ -114,11 +111,14 @@ void *memory_alloc(unsigned int size){
             void *help_address_1 = (char *)make_memory_block(current_free_block_padding, block_size_1, 0);
             // printf("address of block is: %d and value there is: %d checking footer: %d AND ADDRESS: %d\n", (char *)help_address_1, *(int *)help_address_1, *(int *)padding(block_size_1 + *akt_pointer - HEADER_SIZE), (char *)padding(size+ *akt_pointer - HEADER_SIZE));
             
+            int the_nearest_address_left = find_previous_free_memory_block(current_free_block_padding);
+            int the_nereast_address_right = find_next_free_memory_block(current_free_block_padding);
+
             // ======= POINTRE =======
             /**
              * Som prvy a nie posledny - povedz super_pointru adresu na nasledujuci
             */
-            if(counter == 1 && *((char *)current_free_block + HEADER_SIZE) != 0){
+            if(the_nearest_address_left <= 4 && the_nereast_address_right){
                 // printf("Som prvy - povedz super_pointru ze nasledujuci je prvy, superpointer before: %d\n", *super_pointer);
                 *super_pointer = find_next_free_memory_block(current_free_block_padding);
             }
@@ -126,16 +126,15 @@ void *memory_alloc(unsigned int size){
             /**
              * Som posledny a nie prvy - povedz predchadzajucemu ze je posledny
             */
-            else if(counter != 1 && *((char *)current_free_block + HEADER_SIZE) == 0){
+            else if(the_nearest_address_left > 4 && !the_nereast_address_right){
                 // printf("som na konci!\n!");
-                int the_nearest_address_left = find_previous_free_memory_block(current_free_block_padding);
                 *(unsigned int *)padding(the_nearest_address_left + FOOTER_SIZE) = 0;
             }
 
             /**
              * som prvy aj posledny - nastav super pointer na 0
             */
-            if(counter == 1 && *((char *)current_free_block + HEADER_SIZE) == 0){
+            if(the_nearest_address_left <= 4 && !the_nereast_address_right){
                 // printf("Som prvy aj posledny pointer!\n");
                 *super_pointer = 0;
             }
@@ -143,10 +142,7 @@ void *memory_alloc(unsigned int size){
             /**
              * Som v strede - povedz predchadzajucemu nech ukazuje na nasledujuceho 
             */
-            else if(counter != 1 && *((char *)current_free_block + HEADER_SIZE) != 0){
-                int the_nearest_address_left = find_previous_free_memory_block(current_free_block_padding);
-                // zapise do najblizsieho z lava pointer na najblizsi z prava
-                int the_nereast_address_right = find_next_free_memory_block(current_free_block_padding);
+            else if(the_nearest_address_left > 4&& the_nereast_address_right){
                 *(int *)(padding(the_nearest_address_left + HEADER_SIZE)) = the_nereast_address_right;
                 // printf("z lava nereast one: %d z prava nearest one: %d pointer z lava adresa: %d\n", the_nearest_address_left, the_nereast_address_right, *(int *)(padding(the_nearest_address_left + HEADER_SIZE)));
             }
@@ -173,14 +169,14 @@ void *memory_alloc(unsigned int size){
                     best_match_padding = (char *)current_free_block - (char *)INIT_MEMORY_ADDRESS;
                     // printf("current free block: %d %d, current free block value HAHAH: %d\n", best_match_address, (int *)INIT_MEMORY_ADDRESS, best_match_value);
                 } 
-                printf("best_match_value: %d address: %d\n", best_match_value, best_match_address);
+                // printf("best_match_value: %d address: %d\n", best_match_value, best_match_address);
 
                 block_size_1 = size + FOOTER_HEADER_SIZE;
                 block_size_2 = best_match_value - size;
-                printf("size of block 1: %d and size of block 2: %d \n", block_size_1, block_size_2);
+                // printf("size of block 1: %d and size of block 2: %d \n", block_size_1, block_size_2);
                 
                 int padding_addres_block_1 = (char *)best_match_address - (char *)INIT_MEMORY_ADDRESS;
-                printf("padding address 1: %d\n", padding_addres_block_1);
+                // printf("padding address 1: %d\n", padding_addres_block_1);
 
                 void *help_address_1 = (char *)make_memory_block(padding_addres_block_1, block_size_1, 0);
                 void *help_address_2 = (char *)make_memory_block(padding_addres_block_1 + block_size_1, block_size_2, 1);
@@ -248,11 +244,7 @@ void *memory_alloc(unsigned int size){
             current_free_block_padding = *(int *)padding((char *)current_free_block - (char *)INIT_MEMORY_ADDRESS + HEADER_SIZE);
             current_free_block = (int *)padding(current_free_block_padding);
             // printf("current free block: %d, current free block value: %d, next is: %d\n", current_free_block, *current_free_block, current_free_block_padding);
-            // current_free_block = current_free_block + *current_free_block;
         }
-
-        if(counter > 4)
-            break;
     }
 }
 
