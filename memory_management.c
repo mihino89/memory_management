@@ -237,6 +237,14 @@ void *memory_alloc(unsigned int size){
             current_free_block = (int *)padding(current_free_block_padding);
             // printf("current free block: %d, current free block value: %d, next is: %d\n", current_free_block, *current_free_block, current_free_block_padding);
         }
+
+        /**
+         * Ak som na poslednom bloku a nenasiel som vhodny (vacsi) blok
+        */
+        else if(!find_next_free_memory_block(current_free_block_padding) && best_match_value == -1){
+            printf("In region is not enough memory for this size of block\n");
+            return 0;
+        }
     }
 }
 
@@ -562,11 +570,13 @@ void test_velky(){
     test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     pointer4 = (char *) memory_alloc(random_region_number - FOOTER_HEADER_SIZE);
-    padding_left = (void *)pointer4 - INIT_MEMORY_ADDRESS - 4;
-    padding_left_value = *(int *)padding(padding_left);
-    printf("MEMORY ALLOC --> super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer4 - INIT_MEMORY_ADDRESS));
-    print_memory_blocks_in_region(arr);
-    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
+    if(pointer4){
+        padding_left = (void *)pointer4 - INIT_MEMORY_ADDRESS - 4;
+        padding_left_value = *(int *)padding(padding_left);
+        printf("MEMORY ALLOC --> super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer4 - INIT_MEMORY_ADDRESS));
+        print_memory_blocks_in_region(arr);
+        test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
+    }
 
     if (pointer3){
         memory_free(pointer3);
@@ -590,7 +600,6 @@ void test_velky(){
         memory_free(pointer4);
     }
     print_memory_blocks_in_region(arr);
-    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 }
 
 
