@@ -157,17 +157,16 @@ void *memory_alloc(unsigned int size){
             if(!find_next_free_memory_block(current_free_block_padding)){
                 // ======= BLOKY =======
                 /**
-                 * som na poslednom a skontrolujem ci posledny nie je lepsi ako predchadzajuce
+                 * som na poslednom a zaroven prvy vhodny kandidat skontrolujem ci posledny nie je lepsi ako predchadzajuce
                 */
                 if(best_match_value == -1 || best_match_value > (*current_free_block - FOOTER_HEADER_SIZE - size)){
-                    best_match_value = *current_free_block - FOOTER_HEADER_SIZE;
+                    best_match_value = *current_free_block - FOOTER_HEADER_SIZE - FOOTER_HEADER_SIZE;
                     best_match_address = current_free_block;
                     best_match_padding = (char *)current_free_block - (char *)INIT_MEMORY_ADDRESS;
                     // printf("current free block: %d %d, current free block value HAHAH: %d\n", best_match_address, (int *)INIT_MEMORY_ADDRESS, best_match_value);
                 } 
                 int the_nearest_address_left = find_previous_free_memory_block(best_match_padding);
                 int the_nereast_address_right = find_next_free_memory_block(best_match_padding);
-                // printf("this %d\n", the_nereast_address_right);
                 // printf("best_match_value: %d address: %d\n", best_match_padding, best_match_address);
 
                 block_size_1 = size + FOOTER_HEADER_SIZE;
@@ -217,6 +216,7 @@ void *memory_alloc(unsigned int size){
 
                 return (char *)padding(padding_addres_block_left + HEADER_SIZE);
             }
+
             /**
              * este nie som na poslednom moznom bloku - urob porovnanie s best_match
             */
@@ -230,6 +230,7 @@ void *memory_alloc(unsigned int size){
                 best_match_address = (int *)current_free_block;
                 best_match_padding = (char *)current_free_block - (char *)INIT_MEMORY_ADDRESS;
             } 
+            
             /**
              * posun sa na dalsi blok
             */
@@ -242,7 +243,7 @@ void *memory_alloc(unsigned int size){
          * Ak som na poslednom bloku a nenasiel som vhodny (vacsi) blok
         */
         else if(!find_next_free_memory_block(current_free_block_padding) && best_match_value == -1){
-            printf("In region is not enough memory for this size of block\n");
+            printf("MEMORY ALLOC ERROR --> In region is not enough memory for this size of block\n");
             return 0;
         }
     }
@@ -659,9 +660,7 @@ void testing_enviroment(){
 
 
 int main(){
-    // testing_enviroment();
-
-    test_velky();
+    testing_enviroment();
 
     return 0;
 }
