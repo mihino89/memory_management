@@ -85,7 +85,7 @@ void* memory_alloc(unsigned int size)
 
     if (*super_pointer == 0) {
         printf("V initovanej pamati nie je uz dostatok miesta! Prosim realokujte pamat\n");
-        return 0;
+        return NULL;
     }
 
     current_free_block = (unsigned int*)padding(*super_pointer);
@@ -239,7 +239,7 @@ void* memory_alloc(unsigned int size)
         */
         else if (!find_next_free_memory_block(current_free_block_padding) && best_match_value == -1) {
             printf("MEMORY ALLOC ERROR --> In region is not enough memory for this size of block\n");
-            return 0;
+            return NULL;
         }
     }
 }
@@ -363,17 +363,25 @@ int memory_check(void* ptr)
     return 0;
 }
 
+int perc_usage(int akt_memory_usage)
+{
+    return ((akt_memory_usage * 100) / (*(int*)INIT_MEMORY_ADDRESS - FOOTER_HEADER_SIZE));
+}
+
 void print_memory_blocks_in_region(char region[])
 {
-    int akt_address = FOOTER_HEADER_SIZE;
+    int usage = 0, akt_address = FOOTER_HEADER_SIZE;
 
     printf("\nPRINT REGION --> super pointer: %d ", abs(*(unsigned int*)padding(akt_address - HEADER_SIZE)));
 
     while (abs(*(int*)padding(akt_address)) > HEADER_SIZE && akt_address < *(int*)INIT_MEMORY_ADDRESS) {
+        if (*(int*)padding(akt_address) < 0) {
+            usage += abs(*(int*)padding(akt_address));
+        }
         printf("| %d xx%dxx %d ", *(int*)padding(akt_address), akt_address, *(int*)padding(akt_address));
         akt_address = akt_address + abs(*(int*)padding(akt_address));
     }
-    printf("\n");
+    printf("| memory usage: %d%\n", perc_usage(usage));
 }
 
 void memory_alloc_check(char* pointer)
@@ -557,7 +565,7 @@ void test_velky()
     test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     pointer4 = (char*)memory_alloc(random_region_number - FOOTER_HEADER_SIZE);
-    if (pointer4) {
+    if (pointer4 != NULL) {
         memory_alloc_check(pointer4);
         print_memory_blocks_in_region(arr);
         test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);

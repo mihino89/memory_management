@@ -31,3 +31,4 @@ void test_medium_memory_checks(char* pointer1, char* pointer2, char* pointer3, c
 int generate_numbers_for_testing(int min, int max);
 void memory_alloc_check(char* pointer);
 void print_memory_blocks_in_region(char region[]);
+int perc_usage(int akt_memory_usage);
