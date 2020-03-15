@@ -215,7 +215,7 @@ void *memory_alloc(unsigned int size){
                     *(int *)padding(padding_addres_block_right + HEADER_SIZE) = the_nereast_address_right;
                 }
 
-                return (char *)padding(padding_addres_block_left + sizeof(int));
+                return (char *)padding(padding_addres_block_left + HEADER_SIZE);
             }
             /**
              * este nie som na poslednom moznom bloku - urob porovnanie s best_match
@@ -281,6 +281,11 @@ int memory_free(void *valid_ptr){
     void *block_to_free_header_address = (char *)valid_ptr - HEADER_SIZE;
     *(int *)block_to_free_header_address = abs(*(int *)block_to_free_header_address);
 
+    if((int *)valid_ptr < (int *)INIT_MEMORY_ADDRESS || (int *)valid_ptr > ((int *)INIT_MEMORY_ADDRESS + *(int *)INIT_MEMORY_ADDRESS)){
+        printf("pamat mimo rozsahu\n");
+        return 1;
+    }
+
     padding_left = block_to_free_header_address - INIT_MEMORY_ADDRESS;
     padding_right = (block_to_free_header_address + *(int *)block_to_free_header_address - FOOTER_SIZE) - INIT_MEMORY_ADDRESS;
 
@@ -334,11 +339,6 @@ int memory_free(void *valid_ptr){
 
 void memory_init(void *ptr, unsigned int size){
     INIT_MEMORY_ADDRESS = (char *) ptr;
-
-    /** 
-     * Ak ma menej ako 16b tak neviem vytvorit ani jeden blok 
-     * TODO - Najmensia hodnota na init bude potrebna v mojej strukture - 8+16 = 24b
-    */
    
     if(size < 4*(sizeof(unsigned int))) return;
 
@@ -347,19 +347,35 @@ void memory_init(void *ptr, unsigned int size){
 
     // pocet bytov k prvemu volnemu bloku
     *(unsigned int*)padding(HEADER_SIZE) = 2*HEADER_SIZE;
-    // printf("pocet bytov k prvemu volnemu bloku %d, adresa: %d \n", 2*HEADER_SIZE, (unsigned int*)padding(HEADER_SIZE));
 
     // inicializacia headera bloku pamate
     *(unsigned int*)padding(FOOTER_HEADER_SIZE) = size - FOOTER_HEADER_SIZE;
-    // printf("pocet volnych bytov: %d v pamati %d \n", size - FOOTER_HEADER_SIZE, (unsigned int*)padding(FOOTER_HEADER_SIZE));
 
     // najblizsi volny priestor pre data
     *(unsigned int*)padding(FOOTER_HEADER_SIZE + HEADER_SIZE) = 0;
-    // printf("pocet volnych bytov: %d v pamati %d \n", *(unsigned int *)padding(FOOTER_HEADER_SIZE + HEADER_SIZE), (unsigned int*)padding(FOOTER_HEADER_SIZE + HEADER_SIZE));
 
     // inicializacia footera bloku pamate
     *(unsigned int *)padding(size - FOOTER_SIZE) = size - FOOTER_HEADER_SIZE;
-    // printf("pocet volnych bytov: %d v pamati %d \n", size - FOOTER_HEADER_SIZE, (unsigned int*)padding(size - FOOTER_SIZE));
+}
+
+
+int memory_check(void *ptr){
+    int akt_padding_address = FOOTER_HEADER_SIZE;
+    // printf("super pointer in memory_check %d\n", akt_padding_address);
+
+    while(akt_padding_address > HEADER_SIZE && akt_padding_address + abs(*(int *)padding(akt_padding_address)) <= *(int *)INIT_MEMORY_ADDRESS){
+        // printf("haha %d %d %d \n", (int *)padding(akt_padding_address), (int *)ptr, (int *)padding(akt_padding_address) + abs(*(int *)padding(akt_padding_address)));
+        if((int *)padding(akt_padding_address) <= (int *)ptr && (int *)padding(akt_padding_address) + abs(*(int *)padding(akt_padding_address)) >= (int *)ptr){
+            if(*(int *)padding(akt_padding_address) < 0){
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+        akt_padding_address = akt_padding_address + abs(*(int *)padding(akt_padding_address));
+    }
+
+    return 0;
 }
 
 
@@ -473,6 +489,8 @@ void medium_test(){
         memory_free(pointer5);
     }
     print_memory_blocks_in_region(arr);
+
+    printf("\n!memory_check of pointer : %d\n", memory_check(pointer5));
 
     pointer6 = (char*) memory_alloc(blok_1);
     padding_left = (void *)pointer6 - INIT_MEMORY_ADDRESS - 4;
