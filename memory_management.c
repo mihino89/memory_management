@@ -171,10 +171,29 @@ void *memory_alloc(unsigned int size){
 
                 block_size_1 = size + FOOTER_HEADER_SIZE;
                 block_size_2 = best_match_value - size + FOOTER_HEADER_SIZE;
-                // printf("size of block 1: %d and size of block 2: %d \n", block_size_1, block_size_2);
-                
+
                 int padding_addres_block_1 = (char *)best_match_address - (char *)INIT_MEMORY_ADDRESS;
                 // printf("padding address 1: %d\n", padding_addres_block_1);
+                
+                /**
+                 * Ak v bloku 2 nie je priestor ani na footer/header alebo ani na najmensiu pamat tak spoj s blokom 1
+                */
+                if(block_size_2 <= FOOTER_HEADER_SIZE){
+                    block_size_1 = size + FOOTER_HEADER_SIZE + block_size_2;
+                    int padding_addres_block_left = make_memory_block(padding_addres_block_1, block_size_1, 0);
+
+                    if(the_nearest_address_left <= 4 && the_nereast_address_right)
+                        *super_pointer = the_nereast_address_right;
+
+                    if(the_nearest_address_left <= 4 && !the_nereast_address_right)
+                        *super_pointer = 0;
+                    
+                    else if(the_nearest_address_left > 4&& the_nereast_address_right)
+                        *(int *)(padding(the_nearest_address_left + HEADER_SIZE)) = the_nereast_address_right;
+                    
+                    return (char *)padding(padding_addres_block_left + HEADER_SIZE); 
+                }
+                // printf("size of block 1: %d and size of block 2: %d \n", block_size_1, block_size_2);
 
                 int padding_addres_block_left = make_memory_block(padding_addres_block_1, block_size_1, 0);
                 int padding_addres_block_right = make_memory_block(padding_addres_block_1 + block_size_1, block_size_2, 1);
