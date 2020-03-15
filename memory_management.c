@@ -361,11 +361,12 @@ void memory_init(void *ptr, unsigned int size){
 
 int memory_check(void *ptr){
     int akt_padding_address = FOOTER_HEADER_SIZE;
-    // printf("super pointer in memory_check %d\n", akt_padding_address);
+    // printf("ptr arg value %d\n", ptr);
 
     while(akt_padding_address > HEADER_SIZE && akt_padding_address + abs(*(int *)padding(akt_padding_address)) <= *(int *)INIT_MEMORY_ADDRESS){
-        // printf("haha %d %d %d \n", (int *)padding(akt_padding_address), (int *)ptr, (int *)padding(akt_padding_address) + abs(*(int *)padding(akt_padding_address)));
-        if((int *)padding(akt_padding_address) <= (int *)ptr && (int *)padding(akt_padding_address) + abs(*(int *)padding(akt_padding_address)) >= (int *)ptr){
+        // printf("haha %d %d %d %d \n",(int *)padding(akt_padding_address), *(int *)padding(akt_padding_address), (int *)ptr, padding(akt_padding_address) + abs(*(int *)padding(akt_padding_address)));
+        if((int *)padding(akt_padding_address) <= (int *)ptr && padding(akt_padding_address) + abs(*(int *)padding(akt_padding_address)) >= ptr){
+            // printf("haha %d\n", *(int *)padding(akt_padding_address) );
             if(*(int *)padding(akt_padding_address) < 0){
                 return 1;
             } else {
@@ -382,13 +383,12 @@ int memory_check(void *ptr){
 void print_memory_blocks_in_region(char region[]){
     int akt_address = FOOTER_HEADER_SIZE;
 
-    printf("\nregion super pointer: %d ", abs(*(unsigned int *)padding(akt_address - HEADER_SIZE)));
+    printf("\nPRINT REGION --> super pointer: %d ", abs(*(unsigned int *)padding(akt_address - HEADER_SIZE)));
 
     while(abs(*(int *)padding(akt_address)) > HEADER_SIZE && akt_address < *(int *)INIT_MEMORY_ADDRESS){
         printf("| %d xx%dxx %d ", *(int *)padding(akt_address), akt_address, *(int *)padding(akt_address));
         akt_address = akt_address + abs(*(int *)padding(akt_address));
     }
-    // printf("? %d xx%dxx %d ", *(int *)padding(akt_address), akt_address, *(int *)padding(akt_address));
     printf("\n");
 }
 
@@ -397,8 +397,59 @@ int generate_numbers_for_testing(int min, int max){
     return (rand() % (max - min + 1)) + min;
 }
 
+void test_medium_memory_checks(char *pointer1, char *pointer2, char *pointer3, char *pointer4, char *pointer5, char *pointer6){
+     printf("MEMORY CHECK --> pointer1 :%d | pointer2 :%d | pointer3 :%d | pointer4 :%d | pointer5 :%d | pointer6 :%d |\n", memory_check(pointer1), memory_check(pointer2), memory_check(pointer3), memory_check(pointer4), memory_check(pointer5), memory_check(pointer6));
+}
 
-void small_test(){
+
+void test_maly(){
+    int random_region_number = 200;
+    char arr[random_region_number];
+
+    memory_init(arr, random_region_number);
+    
+    char* pointer = (char*) memory_alloc(8);
+    int padding_left = (void *)pointer - INIT_MEMORY_ADDRESS - 4;
+    int padding_left_value = *(int *)padding(padding_left);
+    printf("MEMORY ALLOC --> super pointer %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer - INIT_MEMORY_ADDRESS));
+    
+    char* pointer2 = (char *) memory_alloc(30);
+    padding_left = (void *)pointer2 - INIT_MEMORY_ADDRESS - 4;
+    padding_left_value = *(int *)padding(padding_left);
+    printf("MEMORY ALLOC --> super pointer %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer2 - INIT_MEMORY_ADDRESS));
+
+    char* pointer3 = (char *) memory_alloc(130);
+    padding_left = (void *)pointer3 - INIT_MEMORY_ADDRESS - 4;
+    padding_left_value = *(int *)padding(padding_left);
+    printf("MEMORY ALLOC --> super pointer %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer3 - INIT_MEMORY_ADDRESS));
+    print_memory_blocks_in_region(arr);
+
+    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
+
+    if (pointer){
+        memory_free(pointer);
+    }
+    print_memory_blocks_in_region(arr);
+
+    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
+
+    if (pointer3){
+        memory_free(pointer3);
+    }
+    print_memory_blocks_in_region(arr);
+
+    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
+
+    if (pointer2){
+        memory_free(pointer2);
+    }
+    print_memory_blocks_in_region(arr);
+
+    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
+}
+
+
+void test_stredny(){
     int random_region_number = generate_numbers_for_testing(24, 50000);
     char arr[random_region_number];
 
@@ -407,37 +458,42 @@ void small_test(){
     char* pointer = (char*) memory_alloc(8);
     int padding_left = (void *)pointer - INIT_MEMORY_ADDRESS - 4;
     int padding_left_value = *(int *)padding(padding_left);
-    printf("super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer - INIT_MEMORY_ADDRESS));
+    printf("MEMORY ALLOC --> super pointer %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer - INIT_MEMORY_ADDRESS));
     
     char* pointer2 = (char *) memory_alloc(30);
     padding_left = (void *)pointer2 - INIT_MEMORY_ADDRESS - 4;
     padding_left_value = *(int *)padding(padding_left);
-    printf("super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer2 - INIT_MEMORY_ADDRESS));
+    printf("MEMORY ALLOC --> super pointer %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer2 - INIT_MEMORY_ADDRESS));
 
     char* pointer3 = (char *) memory_alloc(130);
     padding_left = (void *)pointer3 - INIT_MEMORY_ADDRESS - 4;
     padding_left_value = *(int *)padding(padding_left);
-    printf("super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer3 - INIT_MEMORY_ADDRESS));
+    printf("MEMORY ALLOC --> super pointer %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer3 - INIT_MEMORY_ADDRESS));
     print_memory_blocks_in_region(arr);
+
+    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
 
     if (pointer){
         memory_free(pointer);
     }
     print_memory_blocks_in_region(arr);
+    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
 
     if (pointer3){
         memory_free(pointer3);
     }
     print_memory_blocks_in_region(arr);
+    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
 
     if (pointer2){
         memory_free(pointer2);
     }
     print_memory_blocks_in_region(arr);
+    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
 }
 
 
-void medium_test(){
+void test_velky(){
     int blok_1, blok_2, blok_3, blok_4, random_region_number = generate_numbers_for_testing(24, 50000);
     char arr[random_region_number];
     char *pointer1, *pointer2, *pointer3, *pointer4, *pointer5, *pointer6;
@@ -448,88 +504,155 @@ void medium_test(){
     pointer1 = (char*) memory_alloc(blok_1);
     int padding_left = (void *)pointer1 - INIT_MEMORY_ADDRESS - 4;
     int padding_left_value = *(int *)padding(padding_left);
-    printf("super pointer1: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer1 - INIT_MEMORY_ADDRESS));
+    printf("MEMORY ALLOC --> super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer1 - INIT_MEMORY_ADDRESS));
     
     blok_2 = generate_numbers_for_testing(8, 2000);
     pointer2 = (char *) memory_alloc(blok_2);
     padding_left = (void *)pointer2 - INIT_MEMORY_ADDRESS - 4;
     padding_left_value = *(int *)padding(padding_left);
-    printf("super pointer2: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer2 - INIT_MEMORY_ADDRESS));
+    printf("MEMORY ALLOC --> super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer2 - INIT_MEMORY_ADDRESS));
 
     blok_3 = generate_numbers_for_testing(8, 2000);
     pointer3 = (char *) memory_alloc(blok_3);
     padding_left = (void *)pointer3 - INIT_MEMORY_ADDRESS - 4;
     padding_left_value = *(int *)padding(padding_left);
-    printf("super pointer3: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer3 - INIT_MEMORY_ADDRESS));
+    printf("MEMORY ALLOC --> super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer3 - INIT_MEMORY_ADDRESS));
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     if (pointer1){
         memory_free(pointer1);
     }
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
     
     pointer4 = (char*) memory_alloc(8);
     padding_left = (void *)pointer4 - INIT_MEMORY_ADDRESS - 4;
     padding_left_value = *(int *)padding(padding_left);
-    printf("super pointer4: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer4 - INIT_MEMORY_ADDRESS));
+    printf("MEMORY ALLOC --> super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer4 - INIT_MEMORY_ADDRESS));
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     pointer5 = (char*) memory_alloc(8);
     padding_left = (void *)pointer5 - INIT_MEMORY_ADDRESS - 4;
     padding_left_value = *(int *)padding(padding_left);
-    printf("super pointer5: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer5 - INIT_MEMORY_ADDRESS));
+    printf("MEMORY ALLOC --> super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer5 - INIT_MEMORY_ADDRESS));
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
+
 
     if (pointer4){
         memory_free(pointer4);
     }
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
+
 
     if (pointer5){
         memory_free(pointer5);
     }
     print_memory_blocks_in_region(arr);
-
-    printf("\n!memory_check of pointer : %d\n", memory_check(pointer5));
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     pointer6 = (char*) memory_alloc(blok_1);
     padding_left = (void *)pointer6 - INIT_MEMORY_ADDRESS - 4;
     padding_left_value = *(int *)padding(padding_left);
-    printf("super pointer6: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer6 - INIT_MEMORY_ADDRESS));
+    printf("MEMORY ALLOC --> super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer6 - INIT_MEMORY_ADDRESS));
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     pointer4 = (char *) memory_alloc(random_region_number - FOOTER_HEADER_SIZE);
     padding_left = (void *)pointer4 - INIT_MEMORY_ADDRESS - 4;
     padding_left_value = *(int *)padding(padding_left);
-    printf("super pointer4: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer4 - INIT_MEMORY_ADDRESS));
+    printf("MEMORY ALLOC --> super pointer: %d address header: %d address footer: %d value header: %d value footer: %d next 4B: %d\n", *((int *)arr + 1), padding_left, padding_left - FOOTER_SIZE + abs(*(int *)padding(padding_left)), *(int *)padding(padding_left), *(int *)padding(padding_left + abs(padding_left_value) - FOOTER_SIZE), *(int *)padding((void *)pointer4 - INIT_MEMORY_ADDRESS));
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     if (pointer3){
         memory_free(pointer3);
     }
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     if (pointer2){
         memory_free(pointer2);
     }
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     if (pointer6){
         memory_free(pointer6);
     }
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     if (pointer4){
         memory_free(pointer4);
     }
     print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
+}
+
+
+void testing_enviroment(){
+    int choice;
+
+    printf("======= Vitajte v testovacom prostredi pamatoveho manazmentu! =======\n");
+    printf("Prosim vyberte si test (cislo 0-6):\n");
+    printf("\t- 0. Maly test\n");
+    printf("\t- 1. Stredny test\n");
+    printf("\t- 2. Velky test\n");
+    printf("\t- 3. Maly a stredny test\n");
+    printf("\t- 4. Stredny a velky test\n");
+    printf("\t- 5. Vsetky testy -> maly + stredny + velky\n");
+    printf("\t- 6. Nechcem testovat\n");
+
+    scanf("%d", &choice);
+
+    switch (choice)
+    {
+    case 0:
+        printf("======= TEST MALY =======\n");
+        test_maly();
+        break;
+    case 1:
+        printf("======= TEST STREDNY =======\n");
+        test_stredny();
+        break;
+    case 2:
+        printf("======= NEXT VELKY =======\n");
+        test_velky();
+        break;
+    case 3:
+        printf("======= TEST MALY =======\n");
+        test_maly();
+        printf("======= TEST STREDNY =======\n");
+        test_stredny();
+        break;
+    case 4:
+        printf("======= TEST STREDNY =======\n");
+        test_stredny();
+        printf("======= NEXT VELKY =======\n");
+        test_velky();
+        break;
+    case 5:
+        printf("======= TEST MALY =======\n");
+        test_maly();
+        printf("======= TEST STREDNY =======\n");
+        test_stredny();
+        printf("======= NEXT VELKY =======\n");
+        test_velky();
+        break;
+    default:
+        break;
+    }
 }
 
 
 int main(){
-    small_test();
-    printf("======= NEXT TEST =======\n");
-    medium_test();
+    // testing_enviroment();
+
+    test_velky();
 
     return 0;
 }
