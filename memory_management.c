@@ -389,12 +389,9 @@ void memory_init(void *ptr, unsigned int size){
 
 int memory_check(void *ptr){
     int akt_padding_address = FOOTER_HEADER_SIZE;
-    // printf("ptr arg value %d\n", ptr);
 
     while(akt_padding_address > HEADER_SIZE && akt_padding_address + abs(*(int *)padding(akt_padding_address)) <= *(int *)INIT_MEMORY_ADDRESS){
-        // printf("haha %d %d %d %d \n",(int *)padding(akt_padding_address), *(int *)padding(akt_padding_address), (int *)ptr, padding(akt_padding_address) + abs(*(int *)padding(akt_padding_address)));
         if((int *)padding(akt_padding_address) <= (int *)ptr && padding(akt_padding_address) + abs(*(int *)padding(akt_padding_address)) >= ptr){
-            // printf("haha %d\n", *(int *)padding(akt_padding_address) );
             if(*(int *)padding(akt_padding_address) < 0){
                 return 1;
             } else {
@@ -435,8 +432,14 @@ int generate_numbers_for_testing(int min, int max){
     return (rand() % (max - min + 1)) + min;
 }
 
+
 void test_medium_memory_checks(char *pointer1, char *pointer2, char *pointer3, char *pointer4, char *pointer5, char *pointer6){
-     printf("MEMORY CHECK --> pointer1 :%d | pointer2 :%d | pointer3 :%d | pointer4 :%d | pointer5 :%d | pointer6 :%d |\n", memory_check(pointer1), memory_check(pointer2), memory_check(pointer3), memory_check(pointer4), memory_check(pointer5), memory_check(pointer6));
+     printf("MEMORY CHECK --> pointer1 :%d | pointer2 :%d | pointer3 :%d | pointer4 :%d | pointer5 :%d | pointer6 :%d\n", memory_check(pointer1), memory_check(pointer2), memory_check(pointer3), memory_check(pointer4), memory_check(pointer5), memory_check(pointer6));
+}
+
+
+void test_small_memory_checks(char *pointer1, char *pointer2, char *pointer3){
+     printf("MEMORY CHECK --> pointer1 :%d | pointer2 :%d | pointer3 :%d\n", memory_check(pointer1), memory_check(pointer2), memory_check(pointer3));
 }
 
 
@@ -454,27 +457,27 @@ void test_maly(){
    
     pointer3 = (char *) memory_alloc(130);
     memory_alloc_check(pointer3);
-    
+
     print_memory_blocks_in_region(arr);
-    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
+    test_small_memory_checks(pointer, pointer2, pointer3);
 
     if (pointer){
         memory_free(pointer);
     }
     print_memory_blocks_in_region(arr);
-    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
+    test_small_memory_checks(pointer, pointer2, pointer3);
 
     if (pointer3){
         memory_free(pointer3);
     }
     print_memory_blocks_in_region(arr);
-    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
+    test_small_memory_checks(pointer, pointer2, pointer3);
 
     if (pointer2){
         memory_free(pointer2);
     }
     print_memory_blocks_in_region(arr);
-    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n\n", memory_check((void *) pointer), memory_check(pointer2), memory_check(pointer3));
+    test_small_memory_checks(pointer, pointer2, pointer3);
 }
 
 
@@ -494,13 +497,13 @@ void test_stredny(){
     memory_alloc_check(pointer3);
 
     print_memory_blocks_in_region(arr);
-    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer1), memory_check(pointer2), memory_check(pointer3));
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     if (pointer1){
         memory_free(pointer1);
     }
     print_memory_blocks_in_region(arr);
-    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer1), memory_check(pointer2), memory_check(pointer3));
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     pointer1 = (char*) memory_alloc(8);
     memory_alloc_check(pointer1);
@@ -510,7 +513,7 @@ void test_stredny(){
         memory_free(pointer3);
     }
     print_memory_blocks_in_region(arr);
-    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n", memory_check((void *) pointer1), memory_check(pointer2), memory_check(pointer3));
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     pointer3 = (char*) memory_alloc(8);
     memory_alloc_check(pointer3);
@@ -520,7 +523,7 @@ void test_stredny(){
         memory_free(pointer2);
     }
     print_memory_blocks_in_region(arr);
-    printf("MEMORY CHECK --> pointer1: %d | pointer2: %d | pointer3: %d\n\n", memory_check((void *) pointer1), memory_check(pointer2), memory_check(pointer3));
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 
     pointer2 = (char*) memory_alloc(8);
     memory_alloc_check(pointer2);
@@ -530,11 +533,13 @@ void test_stredny(){
     memory_alloc_check(pointer4);
     print_memory_blocks_in_region(arr);
 
-    // pointer5 = (char*) memory_alloc(8);
-    // memory_alloc_check(pointer5);
+    pointer5 = (char*) memory_alloc(8);
+    memory_alloc_check(pointer5);
 
-    // pointer6 = (char*) memory_alloc(8);
-    // memory_alloc_check(pointer6);
+    pointer6 = (char*) memory_alloc(15000);
+    memory_alloc_check(pointer6);
+    print_memory_blocks_in_region(arr);
+    test_medium_memory_checks(pointer1, pointer2, pointer3, pointer4, pointer5, pointer6);
 }
 
 
